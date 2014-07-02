@@ -1,7 +1,7 @@
 Gatekeeper
 ==========
 
-Gatekeeper is a flexible authorization library in PHP... With attitude. It's designed for complex systems with support for custom policies - Gatekeeper lets you mix and match between different models of permissions and access control.
+Gatekeeper is a flexible authorization library in PHP... With attitude. It's designed for complex systems with support for **custom policies** - Gatekeeper lets you mix and match between different models of permissions and access control.
 
 This is an *authorization* package - use it alongside whatever authentication model, package or function you like. Authoriazation is about determining if a user is allowed to do this or that, *not* if the user is who they claim to be. This separation is intentional; whether you've got OAuth 2.0 sessions or good ol' passwords, Gatekeeper doesn't mind.
 
@@ -13,10 +13,13 @@ Vanilla PHP:
 $gatekeeper = new Gatekeeper;
 
 // set policies; start with an ACL list in a JSON file
-$gatekeeper->pushPolicy(new AccessControlListPolicy(new JsonPermissionStore('permissions/acl.json')));
+$gatekeeper->pushPolicy(new AccessControlListPolicy(new JsonAccessControlListStore('permissions/acl.json')));
 
 // set a ban list policy using a custom class that implements the BanListStore interface
-$gatekeeper->pushPolicy(new BanListPolicy(new CustomBanListStore()));
+$gatekeeper->pushPolicy(new BanListPolicy(new YourCustomBanListStore()));
+
+// set a custom policy for your own application
+$gatekeeper->pushPolicy(new YourCustomApplicationPolicy());
 
 // check permissions; do this right before executing a sensitive operation.
 // will throw an exception if the user is not given access.
@@ -31,6 +34,8 @@ Install using Composer.
 Initialize Gatekeeper in PHP simply by doing `new Gatekeeper`. Ideally every point in your app that uses Gatekeeper should refer to the same instance, so you only need to do `iAm` once. The Laravel facade already does this by default.
 
 Your application's user model should implement the GatekeeperUser interface. It currently has no required methods; it's just to tell Gatekeeper that this is a representation of a user.
+
+Currently, Gatekeeper will prioritize denials; it goes through all policies and will allow access if any policies say "allow", but a single "deny" will cause Gatekeeper to refuse. This will be customizable in the future.
 
 ## Checking Permissions
 
@@ -93,6 +98,22 @@ Protected resources should implement the GatekeeperProtectedResource interface. 
 
 ## Configuring Permission Policies
 
-Gatekeeper recognizes *Policies*, which are classes that can tell Gatekeeper if a given user is granted or denied access.
+Welcome to the cool bit.
+
+Gatekeeper recognizes **Policies**, which are classes that can tell Gatekeeper if a given user is granted or denied access. Policies _may_ also need a **Store**, which refers to where the permission information is actually kept; this model is optional, if you want to separate between the policy logic and policy rules. The provided policies all do this.
+
+### In-the-box Policies
+
+- `AccessControlListPolicy` - Accepts an AccessControlListStore.
+- `BanListPolicy` - Accepts a BanListStore instance.
+- `SuperuserPolicy` - Accepts a SuperuserListStore instance.
+
+### Custom Policies
 
 [TBA]
+
+### Custom Stores
+
+[TBA]
+
+
