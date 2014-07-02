@@ -100,7 +100,7 @@ $gatekeeper->mayI('update', $post)->please();
 
 And otherwise acts the same way.
 
-Protected resources should implement the GatekeeperProtectedResource interface. This interface requires two methods: `getResourceName`, which should return a string for matching in permission policies, and `checkOwnership(GatekeeperUser $user)`, which should return true if $user has ownership upon this resource. This way, a resource can determine for itself if the given user "owns" itself, so you can have a single resource with multiple owners.
+Protected resources should implement the `ProtectedResource` interface. This interface requires two methods: `getResourceName`, which should return a string for matching in permission policies, and `checkOwnership(GatekeeperUser $user)`, which should return true if $user has ownership upon this resource. This way, a resource can determine for itself if the given user "owns" itself, so you can have a single resource with multiple owners.
 
 ## Configuring Permission Policies
 
@@ -110,15 +110,25 @@ Gatekeeper recognizes **Policies**, which are classes that can tell Gatekeeper i
 
 ### In-the-box Policies
 
+See the full reference at the bottom of this page for details.
+
 - `RoleBasedAccessControlListPolicy` - Accepts a RoleBasedAccessControlListStore.
 - `AccessControlListPolicy` - Accepts an AccessControlListStore.
 - `BanListPolicy` - Accepts a BanListStore instance.
 - `SuperuserPolicy` - If the user is on the list, they have access to everything. Accepts a SuperuserListStore instance.
 
+
 Utility policies:
 
 - `OpenToAllPolicy` - Send ALLOW to all; this reverses the built-in policy that no response means denial.
 - `DenyGuestsPolicy` - Send DENY to all guests.
+ 
+
+A bit more advanced:
+
+- `UserCriteriaPolicy` - Uses the [criteria pattern](http://en.wikipedia.org/wiki/Criteria_Pattern) applied on the user.
+- `ResourceCriteriaPolicy` - Same as above, applied on the resource.
+- `CriteriaPolicy` - Applies a criteria that accepts both the user and resource.
 
 ### Custom Policies
 
@@ -216,7 +226,44 @@ Some stores, like the provided JSON-based stores, are read-only; you'd have to g
 
 Please **remember to fully test your security policies in your application**. Use whatever flavor of testing you like - never trust any piece of code, by anyone, to be foolproof. It's very easy for security holes to emerge, not due to bad programming, but simple lapses in judgement. *Always* test your code thoroughly.
 
+--
+
 
 ## Provided Policy & Store Reference
+
+
+### CriteriaPolicy
+
+Invokes a `GatekeeperCriteria`-implementing class that accepts both the user and the resource, plus the verb. This is pretty close to being a Policy in and of itself, except that it **passes on guests and non-resource $nouns**. Basically just a handy shortcut.
+
+It's suitable for checks along the lines of "if the user has this and the resource has that, can we do $verb to it?"
+
+Example; if the *user* and *resource* share the same city, the user is allowed to *vote* on it:
+
+```php
+class SameCityCriteria implements GatekeeperCriteria {
+  public method isSatisfiedBy(GatekeeperUser $user, ProtectedResource $resource, $verb)
+  {
+    if ($user->city == $resource->city && $verb == "vote") {
+      return Gatekeeper::ALLOW;
+    }
+  }
+}
+
+$gatekeeper->pushPolicy(new CriteriaPolicy(new SameCityCriteria()));
+$gatekeeper->mayI('vote', $city)->please();
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
