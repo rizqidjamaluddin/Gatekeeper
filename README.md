@@ -148,6 +148,20 @@ class YourAppSuperuserListStore implements SuperuserListStore
 
 Or embedded right in a class:
 
+```php
+class YourAppSuperuserListStore implements SuperuserListStore
+{
+
+  protected $superusers = [
+    'john@example.com', 'jane@example.com'
+  ];
+
+  public function isSuperuser(GatekeeperUser $user)
+  {
+    return in_array($user->email, $this->superusers);
+  }
+}
+```
 
 Or one that involves the database in Laravel 4:
 
