@@ -271,12 +271,12 @@ CriteriaPolicy is also handy for **resource-based permissions** in general. For 
 class MatchGalleryViewingPrivacyCriteria implements GatekeeperCriteria {
   public function isSatisfiedBy(GatekeeperUser $user, Gallery $resource, $verb)
   {
-    if (
-        (
-          $resource->checkOwnership($user) ||
-          ($resource->getPrivacyLevel() == "friend" && $resource->owner->isFriendsWith($user))
-        ) && $verb == 'view'
-      ) {
+  
+    $isOwner = $resource->checkOwnership($user);
+    $hasFriendAccess = $resource->getPrivacyLevel() == "friend" && $resource->owner->isFriendsWith($user);
+    $isPublic = $resource->getPrivacyLevel() == "public";
+   
+    if (($isOwner || $hasFriendAccess || $isPublic) && $verb == 'view') {
       return Gatekeeper::ALLOW;
     }
   }
