@@ -122,11 +122,29 @@ This is the real beef of Gatekeeper - you can create your *own* policies to fit 
 
 Policies implement GatekeeperPolicy interfaces, which just have 2 methods: `checkIfUserMay($user, $verb, $noun, $resource)` amd `checkIfGuestMay($verb, $noun, $resource)`. These methods should return Gatekeeper::ALLOW to permit access, Gatekeeper::DENY to restrict; anything else will just ignore this policy and move on to the next. If no explicit response is given, Gatekeeper will deny access.
 
-Here's a custom policy that 
+Here's a custom policy that lets users create posts only if they have over 100 reputation:
 
 ```php
-
+class ReputationBasedPolicy implements GatekeeperPolicy {
+  
+  public function checkIfGuestMay($verb, $noun, $resource ='')
+  {
+    return; // this policy does not apply to guests
+  }
+  
+  public function checkIfUserMay(GatekeeperUser $user, $verb, $noun, $resource ='')
+  {
+    if ($verb == 'create' && $noun == 'post' && $user->reputation > 100) {
+      return Gatekeeper::ALLOW;
+    } else{
+      return;
+    }
+  }
+  
+}
 ```
+
+Note that this policy does not **deny** on failure, only pass, because we assume users might be allowed to create posts based on another policy (e.g. superusers can always post). As long as we don't set another policy that grants this, we're fine.
 
 ### Custom Stores
 
@@ -174,5 +192,27 @@ class YourAppSuperuserListStore implements SuperuserListStore
   }
 }
 ```
+
+### Doing Operations on Policies and Stores
+
+So far we've talked about how to check if a user can do this or that, but we haven't talked much about manipulating these rules during runtime. For instance, if you have a BanListPolicy, you might want to be able to ban a user. These operations are specific to a policy, and are not a property of Gatekeeper, so you'll want to store separate instances of them:
+
+```php
+$banList = new BanListPolicy(new WriteableTextBanListStore);
+$gatekeeper->pushPolicy($banlist);
+
+// somewhere else...
+$banList->ban($user, $verb, $noun);
+```
+
+Some stores, like the provided JSON-based stores, are read-only; you'd have to go into the file and edit it to change the list. Others, like the WriteableText version above, *are* writeable.
+
+
+## Word of Warning
+
+Please **remember to fully test your security policies in your application**. Use whatever flavor of testing you like - never trust any piece of code, by anyone, to be foolproof. It's very easy for security holes to emerge, not due to bad programming, but simple lapses in judgement. *Always* test your code thoroughly.
+
+
+## Provided Policy & Store Reference
 
 
