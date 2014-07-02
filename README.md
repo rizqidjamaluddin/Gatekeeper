@@ -50,6 +50,8 @@ $gatekeeper = new Gatekeeper;
 $gatekeeper->iAm(Auth::user());
 ```
 
+If you don't use `iAm`, or you give it null, or assumes the user is a guest.
+
 Now it's just a matter of asking Gatekeeper nicely. These methods are chainable, so you can do this:
 
 ```php
