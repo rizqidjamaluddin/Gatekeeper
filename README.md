@@ -125,6 +125,8 @@ Utility policies:
 - `DenyGuestsPolicy` - Send DENY to all guests.
 - `DenyEveryonePolicy` - What it says on the tin. Useful for temporary blocking everything.
 - `FulfillAllPolicy` - Accepts an array of _other policies_, and will only return ALLOW if _all_ of the sub-policies do.
+- `FulfillAnyPolicy` - Also accepts an array of policies, and returns ALLOW if _at least one_ sub-policy does.
+- `RequiredPolicy` - Accepts another policy, and returns DENY if the contained policy does not return ALLOW.
  
 
 A bit more advanced:
@@ -253,17 +255,82 @@ class SameCityCriteria implements GatekeeperCriteria {
   }
 }
 
-$gatekeeper->pushPolicy(new CriteriaPolicy(new SameCityCriteria()));
+$gatekeeper->pushPolicy(new CriteriaPolicy(new SameCityCriteria));
 $gatekeeper->mayI('vote', $restaurant)->please();
 ```
 
-Tip: you can probably filter the $resource here to be a more specific interface than ProtectedResource; for instance, in this example, we could let the criteria accept a custom VenueResource interface which has a `->getCity()` method. This is much cleaner and semantic.
+CriteriaPolicy accepts a second argument: a class or interface name that the resource should match in order for it to be processed. For instance, `$resource->city` in the example above isn't very well-written, because `city` isn't a guaranteed property of ProtectedResource. Instead, we may want to create a VenueResource interface that extends it, which in turn defines a `getCity()` method.
 
+```php
+$gatekeeper->pushPolicy(new CriteriaPolicy(new SameCityCriteria, 'YourApp\VenueResource'));
+```
 
+### UserCriteriaPolicy
 
+Very similar to the above, except it only checks the user. A tad less useful.
 
+Example; if the user has a confirmed email address, they're allowed to post comments:
 
+```php
+class ValidatedEmailCriteria implements GatekeeperUserCriteria {
+  public function isSatisfiedBy(GatekeeperUser $user, $verb)
+  {
+    if ($user->hasConfirmedEmail() && $verb == "comment") {
+      return Gatekeeper::ALLOW;
+    }
+  }
+}
 
+$gatekeeper->pushPolicy(new UserCriteriaPolicy(new ValidatedEmailCriteria));
+$gatekeeper->mayI('comment', $post)->please();
+```
+
+### ResourceCriteriaPolicy
+
+Also similar to CriteriaPolicy, this time only checking the resource.
+
+Example; if the board is public, anyone can post messages to it:
+
+```php
+class PublicCriteria implements GatekeeperResourceCriteria {
+  public function isSatisfiedBy(ProtectedResource $resource, $verb)
+  {
+    if ($resource->isPublic() && $verb == "create_post") {
+      return Gatekeeper::ALLOW;
+    }
+  }
+}
+
+$gatekeeper->pushPolicy(new ResourceCriteriaPolicy(new PublicCriteria));
+$gatekeeper->mayI('create_post', $board)->please();
+```
+
+Like the CriteriaPolicy, it also accepts a second argument with a class or interface name, defining which resource to run on.
+
+FulfillAllPolicy works _really_ nicely with ResourceCriteriaPolicy; used in tandem with a general policy, you can set privacy settings on resources! Here's a system where paying members can download any gallery that's public, while other can only view, while still preventing people from accessing private galleries they're not part of:
+
+```php
+class PublicCriteria implements GatekeeperResourceCriteria {
+  public function isSatisfiedBy(ProtectedResource $resource, $verb)
+  {
+    if ($resource->isPublic() && $verb == "create_post") {
+      return Gatekeeper::ALLOW;
+    }
+  }
+}
+
+$rbacl = [
+  'free_member' => ['global' => ['gallery' => ['view']]], 'paying_member' => ['global' => ['gallery' => ['download']]]
+];
+
+$gatekeeper->pushPolicy(
+  new FulfillAllPolicy(
+    new RoleBasedACLPolicy(new ArrayRoleBasedACLStore($rbacl)),
+    new ResourceCriteriaPolicy(new PublicCriteriaPolicy, 'gallery')
+  )
+);
+
+```
 
 
 
