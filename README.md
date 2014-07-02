@@ -122,6 +122,8 @@ Utility policies:
 
 - `OpenToAllPolicy` - Send ALLOW to all; this reverses the built-in policy that no response means denial.
 - `DenyGuestsPolicy` - Send DENY to all guests.
+- `DenyEveryonePolicy` - What it says on the tin. Useful for temporary blocking everything.
+- `FulfillAllPolicy` - Accepts an array of _other policies_, and will only return ALLOW if _all_ of the sub-policies do.
  
 
 A bit more advanced:
@@ -242,7 +244,7 @@ Example; if the *user* and *resource* share the same city, the user is allowed t
 
 ```php
 class SameCityCriteria implements GatekeeperCriteria {
-  public method isSatisfiedBy(GatekeeperUser $user, ProtectedResource $resource, $verb)
+  public function isSatisfiedBy(GatekeeperUser $user, ProtectedResource $resource, $verb)
   {
     if ($user->city == $resource->city && $verb == "vote") {
       return Gatekeeper::ALLOW;
@@ -251,9 +253,10 @@ class SameCityCriteria implements GatekeeperCriteria {
 }
 
 $gatekeeper->pushPolicy(new CriteriaPolicy(new SameCityCriteria()));
-$gatekeeper->mayI('vote', $city)->please();
+$gatekeeper->mayI('vote', $restaurant)->please();
 ```
 
+Tip: you can probably filter the $resource here to be a more specific interface than ProtectedResource; for instance, in this example, we could let the criteria accept a custom VenueResource interface which has a `->getCity()` method. This is much cleaner and semantic.
 
 
 
