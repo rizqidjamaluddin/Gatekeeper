@@ -106,16 +106,59 @@ Gatekeeper recognizes **Policies**, which are classes that can tell Gatekeeper i
 
 ### In-the-box Policies
 
+- `RoleBasedAccessControlListPolicy` - Accepts a RoleBasedAccessControlListStore.
 - `AccessControlListPolicy` - Accepts an AccessControlListStore.
 - `BanListPolicy` - Accepts a BanListStore instance.
-- `SuperuserPolicy` - Accepts a SuperuserListStore instance.
+- `SuperuserPolicy` - If the user is on the list, they have access to everything. Accepts a SuperuserListStore instance.
+
+Utility policies:
+
+- `OpenToAllPolicy` - Send ALLOW to all; this reverses the built-in policy that no response means denial.
+- `DenyGuestsPolicy` - Send DENY to all guests.
 
 ### Custom Policies
 
-[TBA]
+This is the real beef of Gatekeeper - you can create your *own* policies to fit your application needs.
+
+Policies implement GatekeeperPolicy interfaces, which just have 2 methods: `checkIfUserMay($user, $verb, $noun, $resource)` amd `checkIfGuestMay($verb, $noun, $resource)`. These methods should return Gatekeeper::ALLOW to permit access, Gatekeeper::DENY to restrict; anything else will just ignore this policy and move on to the next. If no explicit response is given, Gatekeeper will deny access.
+
+Here's a custom policy that 
+
+```php
+
+```
 
 ### Custom Stores
 
-[TBA]
+Policies may use stores to separate between the policy logic and the actual policy data; for instance, you might want to store your role-power lists on a JSON file, or in some PHP class, or maybe via MySQL. Each policy has their own store interfaces because they need different things.
+
+You're welcome to create your own stores - particularly for database-based stores, you probably want to customize the exact SQL, table names, column names and whatnot.
+
+For instance, the SuperuserListStore interface has one method, called `isSuperuser($user)`, so one could make this based on the user:
+
+```php
+class YourAppSuperuserListStore implements SuperuserListStore
+{
+  public function isSuperuser(GatekeeperUser $user)
+  {
+    return (bool) $user->super;
+  }
+}
+```
+
+Or embedded right in a class:
+
+
+Or one that involves the database in Laravel 4:
+
+```php
+class YourAppSuperuserListStore implements SuperuserListStore
+{
+  public function isSuperuser(GatekeeperUser $user)
+  {
+    return (bool) DB::table('superusers')->where('user_id, $user->id)->count() === 1;
+  }
+}
+```
 
 
