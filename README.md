@@ -192,7 +192,7 @@ class YourAppSuperuserListStore implements SuperuserListStore
 {
   public function isSuperuser(GatekeeperUser $user)
   {
-    return (bool) DB::table('superusers')->where('user_id, $user->id)->count() === 1;
+    return (bool) DB::table('superusers')->where('user_id', $user->id)->count() === 1;
   }
 }
 ```
