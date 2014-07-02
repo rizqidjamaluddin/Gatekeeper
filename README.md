@@ -16,7 +16,7 @@ $gatekeeper = new Gatekeeper;
 
 // set policies; start with an ACL list in a JSON file
 $gatekeeper->pushPolicy(
-  new RoleBasedAccessControlListPolicy(new JsonRoleBasedAccessControlListStore('permissions/acl.json'))
+  new RoleBasedACLPolicy(new JsonRoleBasedACLStore('permissions/acl.json'))
 );
 
 // set a ban list policy using a custom class that implements the BanListStore interface
@@ -265,6 +265,27 @@ CriteriaPolicy accepts a second argument: a class or interface name that the res
 $gatekeeper->pushPolicy(new CriteriaPolicy(new SameCityCriteria, 'YourApp\VenueResource'));
 ```
 
+CriteriaPolicy is also handy for **resource-based permissions** in general. For instance, you may want users to view a gallery page as public or just themselves and friends:
+
+```php
+class MatchGalleryViewingPrivacyCriteria implements GatekeeperCriteria {
+  public function isSatisfiedBy(GatekeeperUser $user, Gallery $resource, $verb)
+  {
+    if (
+        (
+          $resource->checkOwnership($user) ||
+          ($resource->getPrivacyLevel() == "friend" && $resource->owner->isFriendsWith($user))
+        ) && $verb == 'view'
+      ) {
+      return Gatekeeper::ALLOW;
+    }
+  }
+}
+
+$gatekeeper->pushPolicy(new CriteriaPolicy(new MatchGalleryViewingPrivacyCriteria, 'YourApp\Gallery'));
+$gatekeeper->mayI('view', $gallery)->please();
+```
+
 ### UserCriteriaPolicy
 
 Very similar to the above, except it only checks the user. A tad less useful.
@@ -306,32 +327,6 @@ $gatekeeper->mayI('create_post', $board)->please();
 ```
 
 Like the CriteriaPolicy, it also accepts a second argument with a class or interface name, defining which resource to run on.
-
-FulfillAllPolicy works _really_ nicely with ResourceCriteriaPolicy; used in tandem with a general policy, you can set privacy settings on resources! Here's a system where paying members can download any gallery that's public, while other can only view, while still preventing people from accessing private galleries they're not part of:
-
-```php
-class PublicCriteria implements GatekeeperResourceCriteria {
-  public function isSatisfiedBy(ProtectedResource $resource, $verb)
-  {
-    if ($resource->isPublic() && $verb == "create_post") {
-      return Gatekeeper::ALLOW;
-    }
-  }
-}
-
-$rbacl = [
-  'free_member' => ['global' => ['gallery' => ['view']]], 'paying_member' => ['global' => ['gallery' => ['download']]]
-];
-
-$gatekeeper->pushPolicy(
-  new FulfillAllPolicy(
-    new RoleBasedACLPolicy(new ArrayRoleBasedACLStore($rbacl)),
-    new ResourceCriteriaPolicy(new PublicCriteriaPolicy, 'gallery')
-  )
-);
-
-```
-
 
 
 
