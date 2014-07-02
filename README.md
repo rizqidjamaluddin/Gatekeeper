@@ -5,6 +5,8 @@ Gatekeeper is a flexible authorization library in PHP... With attitude. It's des
 
 This is an *authorization* package - use it alongside whatever authentication model, package or function you like. Authoriazation is about determining if a user is allowed to do this or that, *not* if the user is who they claim to be. This separation is intentional; whether you've got OAuth 2.0 sessions or good ol' passwords, Gatekeeper doesn't mind.
 
+*Please understand that Gatekeeper has flexibility and extendibility in mind*. It may be a tad more difficult to get the hang of, compared to other packages and their shortcuts. That's deliberate; Gatekeeper makes no assumptions and doesn't restrict itself, so you'll need to tell it exactly what to do. We provide as little automagic as possible.
+
 ## Example
 
 Vanilla PHP:
