@@ -112,11 +112,11 @@ Gatekeeper recognizes **Policies**, which are classes that can tell Gatekeeper i
 
 See the full reference at the bottom of this page for details.
 
-- `RoleBasedAccessControlListPolicy` - RBACL. Intended as the "primary" form of access control, as most projects use this. Accepts a RoleBasedAccessControlListStore.
-- `GroupBasedAccessControlListPolicy` - Similar to the above, except a user can be in multiple groups at once. Accepts a GroupBasedAccessControlListStore.
-- `AccessControlListPolicy` - Accepts an AccessControlListStore.
-- `BanListPolicy` - Accepts a BanListStore instance.
-- `SuperuserPolicy` - If the user is on the list, they have access to everything. Accepts a SuperuserListStore instance.
+- `RoleBasedACLPolicy` - Your standard role-based access control list. Intended as the "primary" form of access control, as most projects use this.
+- `GroupBasedACLPolicy` - Similar to the above, except a user can be in multiple groups at once.
+- `ResourceACLPolicy` - Each resource has an explicit list of who can do what to them. Best used alongside the others.
+- `BanListPolicy` - Stop particular users from doing a particular verb on a particular noun or resource.
+- `SuperuserPolicy` - If the user is on the list, they have access to everything.
 
 
 Utility policies:
