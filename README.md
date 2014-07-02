@@ -13,7 +13,9 @@ Vanilla PHP:
 $gatekeeper = new Gatekeeper;
 
 // set policies; start with an ACL list in a JSON file
-$gatekeeper->pushPolicy(new AccessControlListPolicy(new JsonAccessControlListStore('permissions/acl.json')));
+$gatekeeper->pushPolicy(
+  new RoleBasedAccessControlListPolicy(new JsonRoleBasedAccessControlListStore('permissions/acl.json'))
+);
 
 // set a ban list policy using a custom class that implements the BanListStore interface
 $gatekeeper->pushPolicy(new BanListPolicy(new YourCustomBanListStore()));
